@@ -64,8 +64,11 @@ $sn.offFn = function (events, selector, handler) {
         eventsSplitted,
         realHandler;
 
-        if (selector && !handler){
+        if (selector && typeof selector === "function"){
             realHandler = selector;
+        }
+        else if (selector && (typeof selector === 'string' || selector instanceof String)){
+            realSelector = selector;
         }
         else if (selector && handler) {
             realSelector = selector;
@@ -112,7 +115,7 @@ $sn.getRealEventList = function (parentElement, realSelector) {
     if (!realSelector) {
 
         //In this case we assign the event to the elements itselfs
-        if (parentElement instanceof Element) {
+        if (parentElement === document || parentElement instanceof Element) {
             result = [parentElement];
         }
         else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
@@ -122,7 +125,7 @@ $sn.getRealEventList = function (parentElement, realSelector) {
     else {
 
         //In this case we assign the event to the childrenElements
-        if (parentElement instanceof Element) {
+        if (parentElement === document || parentElement instanceof Element) {
             result = parentElement.querySelectorAll(realSelector);
         }
         else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
@@ -141,12 +144,14 @@ $sn.getRealEventList = function (parentElement, realSelector) {
     return result;
 };
 
-//We assign onFn to Element and NodeList
+//We assign onFn to document, Element and NodeList
+document.on = $sn.onFn;
 Element.prototype.on = $sn.onFn;
 HTMLCollection.prototype.on = $sn.onFn;
 NodeList.prototype.on = $sn.onFn;
 
-//We assign offFn to Element and NodeList
+//We assign offFn to document, Element and NodeList
+document.off = $sn.offFn;
 Element.prototype.off = $sn.offFn;
 HTMLCollection.prototype.off = $sn.offFn;
 NodeList.prototype.off = $sn.offFn;
