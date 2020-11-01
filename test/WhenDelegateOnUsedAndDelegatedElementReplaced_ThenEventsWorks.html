@@ -8,14 +8,22 @@
         <button id="btn">Click me!</button>
         <p id="result">No result</p>
         <script type="text/javascript">
+            //we clone btn element
+            const el = document.getElementById('btn');
+            const elClone = el.cloneNode(true);
+
+            //assign the delegated event
             document.on('click', '#btn', function () {
                 const text = document.querySelector("#result");
                 text.innerHTML = "Works!!";
                 setTimeout(function (){
                     text.innerHTML = "No result";
                 }, 3000);
-            })
-            document.off('click', '#btn');
+            });
+
+            //replace btn element
+            el.parentNode.replaceChild(elClone, el);
+
         </script>
     </body>
 </html>

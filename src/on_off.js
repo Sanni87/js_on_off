@@ -24,29 +24,29 @@
 
             eventsSplitted = events.split(' ');
 
-            elementList = getRealEventList(this, realSelector);
+            elementList = getRealEventList(this);
 
             for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
                 const currentElement = elementList[elementIndex];
         
                 //Create the dictionary to next off the events properly
-                if (!currentElement.el){
-                    currentElement.el = {};
+                if (!currentElement.ev){
+                    currentElement.ev = {};
                 }
         
                 if (eventsSplitted) {
                     for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                         const currentEvent = eventsSplitted[eventIndex];
         
-                        if (!currentElement.el[currentEvent]){
-                            currentElement.el[currentEvent] = {
+                        if (!currentElement.ev[currentEvent]) {
+                            currentElement.ev[currentEvent] = {
                                 nel: {}, //namespaced eventListeners TODO
-                                dev: [] //no-namespaced eventListeners
+                                el: [], //no-namespaced eventListeners
+                                del: {} //delegate eventListeners
                             };
                         }
         
-                        currentElement.el[currentEvent].dev.push(realHandler);
-                        currentElement.addEventListener(currentEvent, realHandler);
+                        addListener(currentElement, currentEvent, realHandler, realSelector);
                     }
                 }
             }
@@ -75,31 +75,24 @@
 
             eventsSplitted = events.split(' ');
 
-            elementList = getRealEventList(this, realSelector);
+            elementList = getRealEventList(this);
 
             for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
                 const currentElement = elementList[elementIndex];
-        
-                if (currentElement.el){
-                    if (eventsSplitted) {
-                        for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
-                            const currentEvent = eventsSplitted[eventIndex];
-                            
-                            if (currentElement.el[currentEvent] && currentElement.el[currentEvent].dev){
 
-                                if (realHandler){
-                                    currentElement.el[currentEvent].dev = currentElement.el[currentEvent].dev.filter(el => el != realHandler);
-                                    currentElement.removeEventListener(currentEvent, realHandler);
-                                }
-                                else {
-                                    for (let handlerIndex = 0; handlerIndex < currentElement.el[currentEvent].dev.length; handlerIndex++) {
-                                        const currentHandler = currentElement.el[currentEvent].dev[handlerIndex];
-                                        currentElement.removeEventListener(currentEvent, currentHandler);
-                                    }
-                                    currentElement.el[currentEvent].dev = [];
-                                }
+                for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
+                    const currentEvent = eventsSplitted[eventIndex];
+
+                    if (realHandler){
+                        removeListener(currentElement, currentEvent, realHandler, realSelector);
+                    }
+                    else {
+                        let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
+                        if (handlerList) {
+                            for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
+                                const currentHandler = handlerList[handlerIndex];
+                                removeListener(currentElement, currentEvent, currentHandler, realSelector);
                             }
-                            
                         }
                     }
                 }
@@ -107,39 +100,98 @@
         }
     };
 
-    const getRealEventList = function (parentElement, realSelector) {
+    const getRealEventList = function (parentElement) {
         let result = null;
 
-        if (!realSelector) {
-
-            //In this case we assign the event to the elements itselfs
-            if (parentElement === document || parentElement instanceof Element) {
-                result = [parentElement];
-            }
-            else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
-                result = parentElement;
-            }
+        //In this case we assign the event to the elements itselfs
+        if (parentElement === document || parentElement instanceof Element) {
+            result = [parentElement];
         }
-        else {
-
-            //In this case we assign the event to the childrenElements
-            if (parentElement === document || parentElement instanceof Element) {
-                result = parentElement.querySelectorAll(realSelector);
-            }
-            else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
-                result = [];
-                for (let parentElementIndex = 0; parentElementIndex < parentElement.length; parentElementIndex++) {
-                    const currentParentElement = parentElement[parentElementIndex];
-                    const currentChildrenElements = currentParentElement.querySelectorAll(realSelector);
-                    for (let currentChildIndex = 0; currentChildIndex < currentChildrenElements.length; currentChildIndex++) {
-                        const currentChild = currentChildrenElements[currentChildIndex];
-                        result.push(currentChild);
-                    }
-                }
-            }
+        else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
+            result = parentElement;
         }
 
         return result;
+    };
+
+    const addListener = function (element, currentEvent, handler, delegateSelector) {
+        if (element && currentEvent && handler){
+            if (!delegateSelector){
+                element.ev[currentEvent].el.push(handler);
+                element.addEventListener(currentEvent, handler);
+            } else {
+                const delegateHandler = createDelegateHandler(handler, delegateSelector);
+                if (!element.ev[currentEvent].del[delegateSelector]){
+                    element.ev[currentEvent].del[delegateSelector] = [];
+                }
+                element.ev[currentEvent].del[delegateSelector].push(delegateHandler);
+                element.addEventListener(currentEvent, delegateHandler, false);
+            }
+        }
+    };
+
+    const removeListener = function (element, currentEvent, handler, delegateSelector) {
+        if (element && currentEvent && handler){
+            if (!delegateSelector){
+                if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].el)
+                element.ev[currentEvent].el = element.ev[currentEvent].el.filter(el => el != handler);
+                element.removeEventListener(currentEvent, handler);
+            } else {
+                const delegateHandler = getDelegateHandler(element, currentEvent, handler, delegateSelector);
+                if (delegateHandler){
+                    element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
+                    element.removeEventListener(currentEvent, delegateHandler);
+                }
+            }
+        }
+    }
+
+    const createDelegateHandler = function (handler, delegateSelector) {
+        let outcome = null;
+
+        if (handler && delegateSelector){
+            outcome = function(e) {
+                // loop parent nodes from the target to the delegation node
+                for (let target = e.target; target && target != this; target = target.parentNode) {
+                    if (target.matches(delegateSelector)) {
+                        handler.call(target, e);
+                        break;
+                    }
+                }
+            };
+
+            outcome.realHandler = handler;
+        }
+
+        return outcome;
+    };
+
+    const getDelegateHandler = function (element, currentEvent, handler, delegateSelector) {
+        let outcome = null;
+
+        if (element && currentEvent && handler && delegateSelector) {
+            if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].del && element.ev[currentEvent].del[delegateSelector]){
+                outcome = element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].find( dh => dh.realHandler === handler);
+            }
+        }
+
+        return outcome;
+    };
+
+    const getHandlerList = function (element, currentEvent, delegateSelector) {
+        let outcome = null;
+
+        if (element && element.ev && currentEvent) {
+            const eventListenersData = element.ev[currentEvent];
+            if (delegateSelector && eventListenersData.del[delegateSelector]){
+                outcome = eventListenersData.del[delegateSelector].map( cdel => cdel.realHandler );
+            }
+            else {
+                outcome = eventListenersData.el;
+            }
+        }
+
+        return outcome;
     };
 
     //We assign onFn to document, Element and NodeList
