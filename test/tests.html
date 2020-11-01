@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Test Suite</title>
+    <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.11.3.css">
+    <!--<script src="../src/on_off.js"></script>-->
+    <script src="../dist/on_off.min.js"></script>
+    <script src="https://code.jquery.com/qunit/qunit-2.11.3.js"></script>
+  </head>
+  <body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+    <div id="toTest" hidden>
+        <div id="parent">
+            <button id="btn">Click me!</button>
+            <button id="otherBtn">Don't click me</button>
+            <p id="result" data-init="0">0</p>
+        </div>
+    </div>
+    <script>
+        //We clone original toTestElement to reset before each test
+        let elClone = document.getElementById('toTest').cloneNode(true);
+
+        //Function to reset dom before each test
+        const resetDomToTest = () => {
+            const el = document.getElementById('toTest');
+            el.parentNode.replaceChild(elClone, el);
+            elClone = elClone.cloneNode(true);
+        };
+
+        const resetParent = () => {
+            const el = document.getElementById('parent');
+            const cloned = el.cloneNode(true);
+            el.parentNode.replaceChild(cloned, el);
+        };
+
+        QUnit.module('direct .on()', function() {
+          QUnit.test('.on("click", function) works', function(assert) {
+            resetDomToTest();
+            const button = document.querySelector("#btn");
+            button.on('click', function () {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            });
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
+        });
+
+        QUnit.module('direct .off() after .on()', function() {
+          QUnit.test('.off("click") works', function(assert) {
+            resetDomToTest();
+            const button = document.querySelector("#btn");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+            button.on('click', handler);
+            button.on('click', handler2);
+            button.off('click');
+            button.click();
+            assert.equal(result.innerHTML, '0', '1 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '2 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '3 click => result == 0');
+          });
+
+          QUnit.test('.off("click", handler) works', function(assert) {
+            resetDomToTest();
+            const button = document.querySelector("#btn");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+            button.on('click', handler);
+            button.on('click', handler2);
+            button.off('click', handler2);
+            
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
+        });
+
+        QUnit.module('delegate .on()', function() {
+          QUnit.test('.on("click", selector, function) works', function(assert) {
+            resetDomToTest();
+
+            const elementWithDelegate = document.querySelector("#toTest");
+            elementWithDelegate.on('click', "#btn", function () {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            });
+            
+            const button = document.querySelector("#btn");
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
+
+          QUnit.test('.on("click", selector, function) works only if correct button is clicked', function(assert) {
+            resetDomToTest();
+
+            const elementWithDelegate = document.querySelector("#toTest");
+            elementWithDelegate.on('click', "#btn", function () {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            });
+
+            resetParent(); //reemplazamos los botones para asegurarnos de que el evento sigue ligado
+            const button = document.querySelector("#btn");
+            const otherBtn = document.querySelector("#otherBtn");
+
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+
+            otherBtn.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+            otherBtn.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+            otherBtn.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
+        });
+
+        QUnit.module('delegate .off()', function() {
+          QUnit.test('.off("click", selector) works', function(assert) {
+            resetDomToTest();
+
+            const elementWithDelegate = document.querySelector("#toTest");
+            elementWithDelegate.on('click', "#btn", function () {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            });
+
+            elementWithDelegate.off('click', "#btn");
+
+            const button = document.querySelector("#btn");
+            button.click();
+            assert.equal(result.innerHTML, '0', '1 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '2 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '3 click => result == 0');
+          });
+
+          QUnit.test('.off("click", selector, function) works', function(assert) {
+            resetDomToTest();
+
+            const elementWithDelegate = document.querySelector("#toTest");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+
+            elementWithDelegate.on('click', "#btn", handler);
+            elementWithDelegate.on('click', "#btn", handler2);
+
+            elementWithDelegate.off('click', "#btn", handler2);
+
+            const button = document.querySelector("#btn");
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
+        });
+      </script>      
+  </body>
+</html>

@@ -65,7 +65,7 @@
             if (selector && typeof selector === "function"){
                 realHandler = selector;
             }
-            else if (selector && (typeof selector === 'string' || selector instanceof String)){
+            else if (selector && (typeof selector === 'string' || selector instanceof String) && !handler){
                 realSelector = selector;
             }
             else if (selector && handler) {
