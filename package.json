@@ -2,7 +2,7 @@
   "name": "js_on_off",
   "version": "1.0.0",
   "description": "A lightweight alternative to jquery on and jquery off",
-  "main": "index.js",
+  "main": "dist/on_off.min.js",
   "directories": {
     "test": "test"
   },
