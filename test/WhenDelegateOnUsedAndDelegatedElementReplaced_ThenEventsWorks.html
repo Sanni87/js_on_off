@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="../src/on_off.js"></script>
+    </head>
+    <body>
+        <button id="btn">Click me!</button>
+        <p id="result">No result</p>
+        <script type="text/javascript">
+            //we clone btn element
+            const el = document.getElementById('btn');
+            const elClone = el.cloneNode(true);
+
+            //assign the delegated event
+            document.on('click', '#btn', function () {
+                const text = document.querySelector("#result");
+                text.innerHTML = "Works!!";
+                setTimeout(function (){
+                    text.innerHTML = "No result";
+                }, 3000);
+            });
+
+            //replace btn element
+            el.parentNode.replaceChild(elClone, el);
+
+        </script>
+    </body>
+</html>

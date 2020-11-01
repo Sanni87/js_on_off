@@ -1,155 +1,210 @@
-if (typeof $sn === 'undefined'){
-    var $sn = {};
-}
-$sn.onFn = function (events, selector, data, handler) {
+(function () {
+    const onFn = function (events, selector, data, handler) {
 
-    //if event is null or empty, don't run anything
-    if (events) {
-        let elementList,
-        realSelector,
-        realData,
-        realHandler,
-        eventsSplitted;
+        //if event is null or empty, don't run anything
+        if (events) {
+            let elementList,
+            realSelector,
+            realData,
+            realHandler,
+            eventsSplitted;
 
-        if (selector && !data && !handler) {
-            realHandler = selector;
-        }
-        else if (selector && data && !handler) {
-            realSelector = selector;
-            realHandler = data;
-        }
-        else if (selector && data && handler) {
-            realSelector = selector;
-            realData = data;
-            realHandler = handler;
-        }
-
-        eventsSplitted = events.split(' ');
-
-        elementList = $sn.getRealEventList(this, realSelector);
-
-        for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
-            const currentElement = elementList[elementIndex];
-    
-            //Create the dictionary to next off the events properly
-            if (!currentElement.el){
-                currentElement.el = {};
+            if (selector && !data && !handler) {
+                realHandler = selector;
             }
-    
-            if (eventsSplitted) {
-                for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
-                    const currentEvent = eventsSplitted[eventIndex];
-    
-                    if (!currentElement.el[currentEvent]){
-                        currentElement.el[currentEvent] = {
-                            nel: {}, //namespaced eventListeners TODO
-                            dev: [] //no-namespaced eventListeners
-                        };
-                    }
-    
-                    currentElement.el[currentEvent].dev.push(realHandler);
-                    currentElement.addEventListener(currentEvent, realHandler);
+            else if (selector && data && !handler) {
+                realSelector = selector;
+                realHandler = data;
+            }
+            else if (selector && data && handler) {
+                realSelector = selector;
+                realData = data;
+                realHandler = handler;
+            }
+
+            eventsSplitted = events.split(' ');
+
+            elementList = getRealEventList(this);
+
+            for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
+                const currentElement = elementList[elementIndex];
+        
+                //Create the dictionary to next off the events properly
+                if (!currentElement.ev){
+                    currentElement.ev = {};
                 }
-            }
-        }
-    }
-};
-
-$sn.offFn = function (events, selector, handler) {
-
-    //if event is null or empty, don't run anything
-    if (events) {
-        let elementList,
-        realSelector,
-        eventsSplitted,
-        realHandler;
-
-        if (selector && !handler){
-            realHandler = selector;
-        }
-        else if (selector && handler) {
-            realSelector = selector;
-            realHandler = handler;
-        }
-
-        eventsSplitted = events.split(' ');
-
-        elementList = $sn.getRealEventList(this, realSelector);
-
-        for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
-            const currentElement = elementList[elementIndex];
-    
-            if (currentElement.el){
+        
                 if (eventsSplitted) {
                     for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                         const currentEvent = eventsSplitted[eventIndex];
-                        
-                        if (currentElement.el[currentEvent] && currentElement.el[currentEvent].dev){
-
-                            if (realHandler){
-                                currentElement.el[currentEvent].dev = currentElement.el[currentEvent].dev.filter(el => el != realHandler);
-                                currentElement.removeEventListener(currentEvent, realHandler);
-                            }
-                            else {
-                                for (let handlerIndex = 0; handlerIndex < currentElement.el[currentEvent].dev.length; handlerIndex++) {
-                                    const currentHandler = currentElement.el[currentEvent].dev[handlerIndex];
-                                    currentElement.removeEventListener(currentEvent, currentHandler);
-                                }
-                                currentElement.el[currentEvent].dev = [];
-                            }
+        
+                        if (!currentElement.ev[currentEvent]) {
+                            currentElement.ev[currentEvent] = {
+                                nel: {}, //namespaced eventListeners TODO
+                                el: [], //no-namespaced eventListeners
+                                del: {} //delegate eventListeners
+                            };
                         }
-                        
+        
+                        addListener(currentElement, currentEvent, realHandler, realSelector);
                     }
                 }
             }
         }
-    }
-};
+    };
 
-$sn.getRealEventList = function (parentElement, realSelector) {
-    let result = null;
+    const offFn = function (events, selector, handler) {
 
-    if (!realSelector) {
+        //if event is null or empty, don't run anything
+        if (events) {
+            let elementList,
+            realSelector,
+            eventsSplitted,
+            realHandler;
+
+            if (selector && typeof selector === "function"){
+                realHandler = selector;
+            }
+            else if (selector && (typeof selector === 'string' || selector instanceof String)){
+                realSelector = selector;
+            }
+            else if (selector && handler) {
+                realSelector = selector;
+                realHandler = handler;
+            }
+
+            eventsSplitted = events.split(' ');
+
+            elementList = getRealEventList(this);
+
+            for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
+                const currentElement = elementList[elementIndex];
+
+                for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
+                    const currentEvent = eventsSplitted[eventIndex];
+
+                    if (realHandler){
+                        removeListener(currentElement, currentEvent, realHandler, realSelector);
+                    }
+                    else {
+                        let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
+                        if (handlerList) {
+                            for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
+                                const currentHandler = handlerList[handlerIndex];
+                                removeListener(currentElement, currentEvent, currentHandler, realSelector);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    const getRealEventList = function (parentElement) {
+        let result = null;
 
         //In this case we assign the event to the elements itselfs
-        if (parentElement instanceof Element) {
+        if (parentElement === document || parentElement instanceof Element) {
             result = [parentElement];
         }
         else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
             result = parentElement;
         }
-    }
-    else {
 
-        //In this case we assign the event to the childrenElements
-        if (parentElement instanceof Element) {
-            result = parentElement.querySelectorAll(realSelector);
+        return result;
+    };
+
+    const addListener = function (element, currentEvent, handler, delegateSelector) {
+        if (element && currentEvent && handler){
+            if (!delegateSelector){
+                element.ev[currentEvent].el.push(handler);
+                element.addEventListener(currentEvent, handler);
+            } else {
+                const delegateHandler = createDelegateHandler(handler, delegateSelector);
+                if (!element.ev[currentEvent].del[delegateSelector]){
+                    element.ev[currentEvent].del[delegateSelector] = [];
+                }
+                element.ev[currentEvent].del[delegateSelector].push(delegateHandler);
+                element.addEventListener(currentEvent, delegateHandler, false);
+            }
         }
-        else if (parentElement instanceof HTMLCollection || parentElement instanceof NodeList) {
-            result = [];
-            for (let parentElementIndex = 0; parentElementIndex < parentElement.length; parentElementIndex++) {
-                const currentParentElement = parentElement[parentElementIndex];
-                const currentChildrenElements = currentParentElement.querySelectorAll(realSelector);
-                for (let currentChildIndex = 0; currentChildIndex < currentChildrenElements.length; currentChildIndex++) {
-                    const currentChild = currentChildrenElements[currentChildIndex];
-                    result.push(currentChild);
+    };
+
+    const removeListener = function (element, currentEvent, handler, delegateSelector) {
+        if (element && currentEvent && handler){
+            if (!delegateSelector){
+                if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].el)
+                element.ev[currentEvent].el = element.ev[currentEvent].el.filter(el => el != handler);
+                element.removeEventListener(currentEvent, handler);
+            } else {
+                const delegateHandler = getDelegateHandler(element, currentEvent, handler, delegateSelector);
+                if (delegateHandler){
+                    element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
+                    element.removeEventListener(currentEvent, delegateHandler);
                 }
             }
         }
     }
 
-    return result;
-};
+    const createDelegateHandler = function (handler, delegateSelector) {
+        let outcome = null;
 
-//We assign onFn to Element and NodeList
-Element.prototype.on = $sn.onFn;
-HTMLCollection.prototype.on = $sn.onFn;
-NodeList.prototype.on = $sn.onFn;
+        if (handler && delegateSelector){
+            outcome = function(e) {
+                // loop parent nodes from the target to the delegation node
+                for (let target = e.target; target && target != this; target = target.parentNode) {
+                    if (target.matches(delegateSelector)) {
+                        handler.call(target, e);
+                        break;
+                    }
+                }
+            };
 
-//We assign offFn to Element and NodeList
-Element.prototype.off = $sn.offFn;
-HTMLCollection.prototype.off = $sn.offFn;
-NodeList.prototype.off = $sn.offFn;
+            outcome.realHandler = handler;
+        }
 
+        return outcome;
+    };
 
+    const getDelegateHandler = function (element, currentEvent, handler, delegateSelector) {
+        let outcome = null;
+
+        if (element && currentEvent && handler && delegateSelector) {
+            if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].del && element.ev[currentEvent].del[delegateSelector]){
+                outcome = element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].find( dh => dh.realHandler === handler);
+            }
+        }
+
+        return outcome;
+    };
+
+    const getHandlerList = function (element, currentEvent, delegateSelector) {
+        let outcome = null;
+
+        if (element && element.ev && currentEvent) {
+            const eventListenersData = element.ev[currentEvent];
+            if (delegateSelector && eventListenersData.del[delegateSelector]){
+                outcome = eventListenersData.del[delegateSelector].map( cdel => cdel.realHandler );
+            }
+            else {
+                outcome = eventListenersData.el;
+            }
+        }
+
+        return outcome;
+    };
+
+    //We assign onFn to document, Element and NodeList
+    document.on = onFn;
+    Element.prototype.on = onFn;
+    HTMLCollection.prototype.on = onFn;
+    NodeList.prototype.on = onFn;
+
+    //We assign offFn to document, Element and NodeList
+    document.off = offFn;
+    Element.prototype.off = offFn;
+    HTMLCollection.prototype.off = offFn;
+    NodeList.prototype.off = offFn;
+
+})();
 
