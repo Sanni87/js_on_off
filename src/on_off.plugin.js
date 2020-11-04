@@ -1,6 +1,5 @@
 import { on, off } from "./on_off.module";
 (function () {
-    
 
     //We assign onFn to document, Element and NodeList
     document.on = on;
