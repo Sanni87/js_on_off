@@ -1,4 +1,6 @@
-import { on, off } from "./on_off.module";
+import { on } from './on.module';
+import { off } from './off.module';
+
 (function () {
 
     //We assign onFn to document, Element and NodeList
