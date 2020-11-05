@@ -1,5 +1,4 @@
-import { on } from './on.module';
-import { off } from './off.module';
+import {on, off} from './on_off.module';
 
 (function () {
 
