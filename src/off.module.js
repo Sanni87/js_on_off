@@ -2,30 +2,32 @@ import { getRealEventList } from './common.module';
 
 const off = function (events, selector, handler) {
 
-    //if event is null or empty, don't run anything
+    let elementList,
+    realSelector,
+    eventsSplitted,
+    realHandler;
+
+    if (selector && typeof selector === "function"){
+        realHandler = selector;
+    }
+    else if (selector && (typeof selector === 'string' || selector instanceof String) && !handler){
+        realSelector = selector;
+    }
+    else if (selector && handler) {
+        realSelector = selector;
+        realHandler = handler;
+    }
+
     if (events) {
-        let elementList,
-        realSelector,
-        eventsSplitted,
-        realHandler;
-
-        if (selector && typeof selector === "function"){
-            realHandler = selector;
-        }
-        else if (selector && (typeof selector === 'string' || selector instanceof String) && !handler){
-            realSelector = selector;
-        }
-        else if (selector && handler) {
-            realSelector = selector;
-            realHandler = handler;
-        }
-
         eventsSplitted = events.split(' ');
+    }
 
-        elementList = getRealEventList(this);
+    elementList = getRealEventList(this);
 
-        for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
-            const currentElement = elementList[elementIndex];
+    for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
+        const currentElement = elementList[elementIndex];
+
+        if (eventsSplitted && eventsSplitted.length > 0){
 
             for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                 const currentEvent = eventsSplitted[eventIndex];
@@ -34,18 +36,27 @@ const off = function (events, selector, handler) {
                     removeListener(currentElement, currentEvent, realHandler, realSelector);
                 }
                 else {
-                    let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
-                    if (handlerList) {
-                        for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
-                            const currentHandler = handlerList[handlerIndex];
-                            removeListener(currentElement, currentEvent, currentHandler, realSelector);
-                        }
-                    }
+                    removeAllListeners(currentElement, currentEvent, realSelector);
                 }
+            }
+        } 
+        else {
+            for (const currentEvent in currentElement.ev) {
+                removeAllListeners(currentElement, currentEvent, realSelector);
             }
         }
     }
 };
+
+const removeAllListeners = function (currentElement, currentEvent, realSelector) {
+    let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
+    if (handlerList) {
+        for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
+            const currentHandler = handlerList[handlerIndex];
+            removeListener(currentElement, currentEvent, currentHandler, realSelector);
+        }
+    }
+}
 
 const removeListener = function (element, currentEvent, handler, delegateSelector) {
     if (element && currentEvent && handler){
@@ -56,7 +67,7 @@ const removeListener = function (element, currentEvent, handler, delegateSelecto
         } else {
             const delegateHandler = getDelegateHandler(element, currentEvent, handler, delegateSelector);
             if (delegateHandler){
-                element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
+                element.ev[currentEvent].del[delegateSelector] = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
                 element.removeEventListener(currentEvent, delegateHandler);
             }
         }
