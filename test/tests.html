@@ -206,6 +206,36 @@
             assert.equal(result.innerHTML, '3', '3 click => result == 3');
           });
         });
+        QUnit.module('.off() with no params', function() {
+          QUnit.test('.off() with no params works', function(assert) {
+            resetDomToTest();
+
+            const button = document.querySelector("#btn");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+            button.on('click', handler);
+            button.on('click', handler2);
+
+            //WHEN
+            button.off();
+
+            //THEN
+            button.click();
+            assert.equal(result.innerHTML, '0', '1 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '2 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '3 click => result == 0');
+          });
+        });
       </script>      
   </body>
 </html>
