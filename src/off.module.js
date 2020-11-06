@@ -1,4 +1,4 @@
-import { getRealEventList } from './common.module';
+import { getRealEventList, getNameAndNamespace } from './common.module';
 
 const off = function (events, selector, handler) {
 
@@ -32,40 +32,43 @@ const off = function (events, selector, handler) {
             for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                 const currentEvent = eventsSplitted[eventIndex];
 
+                let currentEventName, namespace;
+                [currentEventName, namespace] = getNameAndNamespace(currentEvent);
+
                 if (realHandler){
-                    removeListener(currentElement, currentEvent, realHandler, realSelector);
+                    removeListener(currentElement, namespace, currentEventName, realHandler, realSelector);
                 }
                 else {
-                    removeAllListeners(currentElement, currentEvent, realSelector);
+                    removeAllListeners(currentElement, namespace, currentEventName, realSelector);
                 }
             }
         } 
         else {
             for (const currentEvent in currentElement.ev) {
-                removeAllListeners(currentElement, currentEvent, realSelector);
+                removeAllListeners(currentElement, undefined, currentEvent, realSelector);
             }
         }
     }
 };
 
-const removeAllListeners = function (currentElement, currentEvent, realSelector) {
-    let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
+const removeAllListeners = function (currentElement, namespace, currentEvent, realSelector) {
+    let handlerList = getHandlerList(currentElement, namespace, currentEvent, realSelector);
     if (handlerList) {
         for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
             const currentHandler = handlerList[handlerIndex];
-            removeListener(currentElement, currentEvent, currentHandler, realSelector);
+            removeListener(currentElement, namespace, currentEvent, currentHandler, realSelector);
         }
     }
 }
 
-const removeListener = function (element, currentEvent, handler, delegateSelector) {
+const removeListener = function (element, namespace, currentEvent, handler, delegateSelector) {
     if (element && currentEvent && handler){
         if (!delegateSelector){
             if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].el)
             element.ev[currentEvent].el = element.ev[currentEvent].el.filter(el => el != handler);
             element.removeEventListener(currentEvent, handler);
         } else {
-            const delegateHandler = getDelegateHandler(element, currentEvent, handler, delegateSelector);
+            const delegateHandler = getDelegateHandler(element, namespace, currentEvent, handler, delegateSelector);
             if (delegateHandler){
                 element.ev[currentEvent].del[delegateSelector] = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
                 element.removeEventListener(currentEvent, delegateHandler);
@@ -74,7 +77,7 @@ const removeListener = function (element, currentEvent, handler, delegateSelecto
     }
 }
 
-const getDelegateHandler = function (element, currentEvent, handler, delegateSelector) {
+const getDelegateHandler = function (element, namespace, currentEvent, handler, delegateSelector) {
     let outcome = null;
 
     if (element && currentEvent && handler && delegateSelector) {
@@ -86,7 +89,7 @@ const getDelegateHandler = function (element, currentEvent, handler, delegateSel
     return outcome;
 };
 
-const getHandlerList = function (element, currentEvent, delegateSelector) {
+const getHandlerList = function (element, namespace, currentEvent, delegateSelector) {
     let outcome = null;
 
     if (element && element.ev && currentEvent) {
