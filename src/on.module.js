@@ -39,7 +39,8 @@ const on = function (events, selector, data, handler) {
                 for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                     const currentEvent = eventsSplitted[eventIndex];
     
-                    const { currentEventName, namespace } = getNameAndNamespace(currentEvent);
+                    let currentEventName, namespace;
+                    [currentEventName, namespace] = getNameAndNamespace(currentEvent);
                     if (!currentElement.ev[currentEventName]) {
                         currentElement.ev[currentEventName] = createEmptyEventStructure(true);
                     }

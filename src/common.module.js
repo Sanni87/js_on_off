@@ -15,7 +15,7 @@ const getRealEventList = function (parentElement) {
 const getNameAndNamespace = function (nameWithNamespace) {
     const outcome = [];
     if (nameWithNamespace) {
-        const splitted = name.split('.');
+        const splitted = nameWithNamespace.split('.');
         if (splitted){
 
             for (let index = 0; index < splitted.length; index++) {
