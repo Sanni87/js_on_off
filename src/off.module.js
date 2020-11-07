@@ -1,4 +1,4 @@
-import { getRealEventList } from './common.module';
+import { getRealEventList, getNameAndNamespace } from './common.module';
 
 const off = function (events, selector, handler) {
 
@@ -32,74 +32,116 @@ const off = function (events, selector, handler) {
             for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                 const currentEvent = eventsSplitted[eventIndex];
 
-                if (realHandler){
-                    removeListener(currentElement, currentEvent, realHandler, realSelector);
-                }
-                else {
-                    removeAllListeners(currentElement, currentEvent, realSelector);
+                let currentEventName, namespace;
+                [currentEventName, namespace] = getNameAndNamespace(currentEvent);
+
+                if (currentEventName) {
+
+                    if (realHandler){
+                        removeListener(currentElement, namespace, currentEventName, realHandler, realSelector);
+                    }
+                    else {
+                        removeAllListeners(currentElement, namespace, currentEventName, realSelector);
+                    }
+                } else if (namespace) { // in this case we don't have eventName but we have namespace
+
+                    for (const currentEvent in currentElement.ev) {
+                        removeAllListeners(currentElement, namespace, currentEvent, realSelector);
+                    }
                 }
             }
         } 
         else {
             for (const currentEvent in currentElement.ev) {
-                removeAllListeners(currentElement, currentEvent, realSelector);
+                removeAllListeners(currentElement, undefined, currentEvent, realSelector);
             }
         }
     }
 };
 
-const removeAllListeners = function (currentElement, currentEvent, realSelector) {
-    let handlerList = getHandlerList(currentElement, currentEvent, realSelector);
+const removeAllListeners = function (currentElement, namespace, currentEvent, realSelector) {
+    let handlerList = getHandlerList(currentElement, namespace, currentEvent, realSelector);
     if (handlerList) {
         for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
             const currentHandler = handlerList[handlerIndex];
-            removeListener(currentElement, currentEvent, currentHandler, realSelector);
+            removeListener(currentElement, namespace, currentEvent, currentHandler, realSelector);
+        }
+    }
+
+    // if there is no namespace, we must to remove also namespaced eventhandlers
+    if (!namespace && currentElement.ev && currentElement.ev[currentEvent] && currentElement.ev[currentEvent].nel) {
+        for (const currentNamespace in currentElement.ev[currentEvent].nel) {
+            removeAllListeners(currentElement, currentNamespace, currentEvent, realSelector);
+        }
+    }
+
+    // if there is no delegate selector, we must to remove also delegated eventhandlers
+    if (!realSelector && currentElement.ev && currentElement.ev[currentEvent] && currentElement.ev[currentEvent].del) {
+        for (const currentRealSelector in currentElement.ev[currentEvent].del) {
+            removeAllListeners(currentElement, namespace, currentEvent, currentRealSelector);
         }
     }
 }
 
-const removeListener = function (element, currentEvent, handler, delegateSelector) {
-    if (element && currentEvent && handler){
+const removeListener = function (element, namespace, currentEvent, handler, delegateSelector) {
+    let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
+
+    if (realEventStructure && handler) {
         if (!delegateSelector){
-            if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].el)
-            element.ev[currentEvent].el = element.ev[currentEvent].el.filter(el => el != handler);
+            if (element.ev && realEventStructure && realEventStructure.el)
+            realEventStructure.el = realEventStructure.el.filter(el => el != handler);
             element.removeEventListener(currentEvent, handler);
         } else {
-            const delegateHandler = getDelegateHandler(element, currentEvent, handler, delegateSelector);
+            const delegateHandler = getDelegateHandler(realEventStructure, handler, delegateSelector);
             if (delegateHandler){
-                element.ev[currentEvent].del[delegateSelector] = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
+                realEventStructure.del[delegateSelector] = realEventStructure.del[delegateSelector].filter(el => el != delegateHandler);
                 element.removeEventListener(currentEvent, delegateHandler);
             }
         }
     }
 }
 
-const getDelegateHandler = function (element, currentEvent, handler, delegateSelector) {
+const getDelegateHandler = function (realEventStructure, handler, delegateSelector) {
     let outcome = null;
 
-    if (element && currentEvent && handler && delegateSelector) {
-        if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].del && element.ev[currentEvent].del[delegateSelector]){
-            outcome = element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].find( dh => dh.realHandler === handler);
+    if (realEventStructure && delegateSelector) {
+        if (realEventStructure.del[delegateSelector]){
+            outcome = realEventStructure.del[delegateSelector].find( dh => dh.realHandler === handler);
         }
     }
 
     return outcome;
 };
 
-const getHandlerList = function (element, currentEvent, delegateSelector) {
+const getHandlerList = function (element, namespace, currentEvent, delegateSelector) {
     let outcome = null;
 
-    if (element && element.ev && currentEvent) {
-        const eventListenersData = element.ev[currentEvent];
-        if (delegateSelector && eventListenersData.del[delegateSelector]){
-            outcome = eventListenersData.del[delegateSelector].map( cdel => cdel.realHandler );
+    let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
+
+    if (realEventStructure) {
+        if (delegateSelector && realEventStructure.del[delegateSelector]){
+            outcome = realEventStructure.del[delegateSelector].map( cdel => cdel.realHandler );
         }
         else {
-            outcome = eventListenersData.el;
+            outcome = realEventStructure.el;
+        }
+    }
+    
+    return outcome;
+};
+
+const getRealEventStructure = function (element, namespace, currentEvent) {
+    let outcome;
+    if (element && element.ev && currentEvent && element.ev[currentEvent]) {
+
+        if (namespace && element.ev[currentEvent].nel[namespace]) {
+            outcome = element.ev[currentEvent].nel[namespace];
+        } else if (!namespace){
+            outcome = element.ev[currentEvent];
         }
     }
 
     return outcome;
-};
+}
 
 export { off };

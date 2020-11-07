@@ -12,4 +12,18 @@ const getRealEventList = function (parentElement) {
     return result;
 };
 
-export { getRealEventList };
+const getNameAndNamespace = function (nameWithNamespace) {
+    const outcome = [];
+    if (nameWithNamespace) {
+        const splitted = nameWithNamespace.split('.');
+        if (splitted){
+
+            for (let index = 0; index < splitted.length; index++) {
+                outcome.push(splitted[index]);
+            }
+        }
+    }
+    return outcome;
+};
+
+export { getRealEventList, getNameAndNamespace };

@@ -1,4 +1,4 @@
-import { getRealEventList } from './common.module';
+import { getRealEventList, getNameAndNamespace } from './common.module';
 
 const on = function (events, selector, data, handler) {
 
@@ -39,32 +39,41 @@ const on = function (events, selector, data, handler) {
                 for (let eventIndex = 0; eventIndex < eventsSplitted.length; eventIndex++) {
                     const currentEvent = eventsSplitted[eventIndex];
     
-                    if (!currentElement.ev[currentEvent]) {
-                        currentElement.ev[currentEvent] = {
-                            nel: {}, //namespaced eventListeners TODO
-                            el: [], //no-namespaced eventListeners
-                            del: {} //delegate eventListeners
-                        };
+                    let currentEventName, namespace;
+                    [currentEventName, namespace] = getNameAndNamespace(currentEvent);
+                    if (!currentElement.ev[currentEventName]) {
+                        currentElement.ev[currentEventName] = createEmptyEventStructure(true);
                     }
     
-                    addListener(currentElement, currentEvent, realHandler, realSelector);
+                    addListener(currentElement, namespace, currentEventName, realHandler, realSelector);
                 }
             }
         }
     }
 };
 
-const addListener = function (element, currentEvent, handler, delegateSelector) {
-    if (element && currentEvent && handler){
+const addListener = function (element, namespace, currentEvent, handler, delegateSelector) {
+    if (element && currentEvent && handler) {
+
+        let realEventStructure;
+        if (namespace) {
+            if (!element.ev[currentEvent].nel[namespace]) {
+                element.ev[currentEvent].nel[namespace] = createEmptyEventStructure();
+            }
+            realEventStructure = element.ev[currentEvent].nel[namespace];
+        } else {
+            realEventStructure = element.ev[currentEvent];
+        }
+
         if (!delegateSelector){
-            element.ev[currentEvent].el.push(handler);
+            realEventStructure.el.push(handler);
             element.addEventListener(currentEvent, handler);
         } else {
             const delegateHandler = createDelegateHandler(handler, delegateSelector);
-            if (!element.ev[currentEvent].del[delegateSelector]){
-                element.ev[currentEvent].del[delegateSelector] = [];
+            if (!realEventStructure.del[delegateSelector]){
+                realEventStructure.del[delegateSelector] = [];
             }
-            element.ev[currentEvent].del[delegateSelector].push(delegateHandler);
+            realEventStructure.del[delegateSelector].push(delegateHandler);
             element.addEventListener(currentEvent, delegateHandler, false);
         }
     }
@@ -85,6 +94,19 @@ const createDelegateHandler = function (handler, delegateSelector) {
         };
 
         outcome.realHandler = handler;
+    }
+
+    return outcome;
+};
+
+const createEmptyEventStructure = function (withNamespacedEvents) {
+    let outcome = {
+        el: [], //no-namespaced eventListeners
+        del: {} //delegate eventListeners
+    };
+
+    if (withNamespacedEvents) {
+        outcome.nel = {}; //namespaced eventListeners
     }
 
     return outcome;
