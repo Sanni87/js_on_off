@@ -211,6 +211,35 @@
             button.click();
             assert.equal(result.innerHTML, '3', '3 click => result == 3');
           });
+
+          QUnit.test('.off("click") removes delegate eventListeners', function(assert) {
+            resetDomToTest();
+
+            const elementWithDelegate = document.querySelector("#toTest");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+
+            elementWithDelegate.on('click', "#btn", handler);
+            elementWithDelegate.on('click', "#btn", handler2);
+
+            elementWithDelegate.off('click');
+
+            const button = document.querySelector("#btn");
+            button.click();
+            assert.equal(result.innerHTML, '0', '1 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '2 click => result == 0');
+            button.click();
+            assert.equal(result.innerHTML, '0', '3 click => result == 0');
+          });
         });
         QUnit.module('.off() with no params', function() {
           QUnit.test('.off() with no params works', function(assert) {
