@@ -62,27 +62,29 @@ const removeAllListeners = function (currentElement, namespace, currentEvent, re
 }
 
 const removeListener = function (element, namespace, currentEvent, handler, delegateSelector) {
-    if (element && currentEvent && handler){
+    let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
+
+    if (realEventStructure && handler) {
         if (!delegateSelector){
-            if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].el)
-            element.ev[currentEvent].el = element.ev[currentEvent].el.filter(el => el != handler);
+            if (element.ev && realEventStructure && realEventStructure.el)
+            realEventStructure.el = realEventStructure.el.filter(el => el != handler);
             element.removeEventListener(currentEvent, handler);
         } else {
-            const delegateHandler = getDelegateHandler(element, namespace, currentEvent, handler, delegateSelector);
+            const delegateHandler = getDelegateHandler(realEventStructure, handler, delegateSelector);
             if (delegateHandler){
-                element.ev[currentEvent].del[delegateSelector] = element.ev[currentEvent].del[delegateSelector].filter(el => el != delegateHandler);
+                realEventStructure.del[delegateSelector] = realEventStructure.del[delegateSelector].filter(el => el != delegateHandler);
                 element.removeEventListener(currentEvent, delegateHandler);
             }
         }
     }
 }
 
-const getDelegateHandler = function (element, namespace, currentEvent, handler, delegateSelector) {
+const getDelegateHandler = function (realEventStructure, handler, delegateSelector) {
     let outcome = null;
 
-    if (element && currentEvent && handler && delegateSelector) {
-        if (element.ev && element.ev[currentEvent] && element.ev[currentEvent].del && element.ev[currentEvent].del[delegateSelector]){
-            outcome = element.ev[currentEvent].el = element.ev[currentEvent].del[delegateSelector].find( dh => dh.realHandler === handler);
+    if (realEventStructure && delegateSelector) {
+        if (realEventStructure.del[delegateSelector]){
+            outcome = realEventStructure.del[delegateSelector].find( dh => dh.realHandler === handler);
         }
     }
 
@@ -92,17 +94,32 @@ const getDelegateHandler = function (element, namespace, currentEvent, handler, 
 const getHandlerList = function (element, namespace, currentEvent, delegateSelector) {
     let outcome = null;
 
-    if (element && element.ev && currentEvent) {
-        const eventListenersData = element.ev[currentEvent];
-        if (delegateSelector && eventListenersData.del[delegateSelector]){
-            outcome = eventListenersData.del[delegateSelector].map( cdel => cdel.realHandler );
+    let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
+
+    if (realEventStructure) {
+        if (delegateSelector && realEventStructure.del[delegateSelector]){
+            outcome = realEventStructure.del[delegateSelector].map( cdel => cdel.realHandler );
         }
         else {
-            outcome = eventListenersData.el;
+            outcome = realEventStructure.el;
+        }
+    }
+    
+    return outcome;
+};
+
+const getRealEventStructure = function (element, namespace, currentEvent) {
+    let outcome;
+    if (element && element.ev && currentEvent && element.ev[currentEvent]) {
+
+        if (namespace && element.ev[currentEvent].nel[namespace]) {
+            outcome = element.ev[currentEvent].nel[namespace];
+        } else if (!namespace){
+            outcome = element.ev[currentEvent];
         }
     }
 
     return outcome;
-};
+}
 
 export { off };
