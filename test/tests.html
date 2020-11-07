@@ -321,6 +321,43 @@
             button.click();
             assert.equal(result.innerHTML, '3', '3 click => result == 3');
           });
+
+          QUnit.test('direct .off() with no params remove namespaced events', function(assert) {
+            resetDomToTest();
+
+            const button = document.querySelector("#btn");
+            const handler = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 1;
+            };
+            const handler2 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+            const handler3 = () => {
+                const result = document.querySelector("#result");
+                const previous = parseInt(result.innerHTML);
+                result.innerHTML = previous + 7;
+            };
+            button.on('click', handler2);
+            button.on('click.removeThis', handler3);
+            button.on('mouseup.dontRemove', handler);
+
+            button.off('click');
+
+            //THEN
+            triggerMouseEvent (button, "mouseup");
+            button.click();
+            assert.equal(result.innerHTML, '1', '1 click => result == 1');
+            triggerMouseEvent (button, "mouseup");
+            button.click();
+            assert.equal(result.innerHTML, '2', '2 click => result == 2');
+            triggerMouseEvent (button, "mouseup");
+            button.click();
+            assert.equal(result.innerHTML, '3', '3 click => result == 3');
+          });
         });
       </script>      
   </body>

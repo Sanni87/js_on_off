@@ -44,7 +44,7 @@ const off = function (events, selector, handler) {
                         removeAllListeners(currentElement, namespace, currentEventName, realSelector);
                     }
                 } else if (namespace) { // in this case we don't have eventName but we have namespace
-                
+
                     for (const currentEvent in currentElement.ev) {
                         removeAllListeners(currentElement, namespace, currentEvent, realSelector);
                     }
@@ -65,6 +65,20 @@ const removeAllListeners = function (currentElement, namespace, currentEvent, re
         for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
             const currentHandler = handlerList[handlerIndex];
             removeListener(currentElement, namespace, currentEvent, currentHandler, realSelector);
+        }
+    }
+
+    // if there is no namespace, we must to remove also namespaced eventhandlers
+    if (!namespace && currentElement.ev && currentElement.ev[currentEvent] && currentElement.ev[currentEvent].nel) {
+        for (const currentNamespace in currentElement.ev[currentEvent].nel) {
+            removeAllListeners(currentElement, currentNamespace, currentEvent, realSelector);
+        }
+    }
+
+    // if there is no delegate selector, we must to remove also delegated eventhandlers
+    if (!realSelector && currentElement.ev && currentElement.ev[currentEvent] && currentElement.ev[currentEvent].del) {
+        for (const currentRealSelector in currentElement.ev[currentEvent].del) {
+            removeAllListeners(currentElement, namespace, currentEvent, currentRealSelector);
         }
     }
 }
