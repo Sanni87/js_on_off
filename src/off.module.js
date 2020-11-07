@@ -35,11 +35,19 @@ const off = function (events, selector, handler) {
                 let currentEventName, namespace;
                 [currentEventName, namespace] = getNameAndNamespace(currentEvent);
 
-                if (realHandler){
-                    removeListener(currentElement, namespace, currentEventName, realHandler, realSelector);
-                }
-                else {
-                    removeAllListeners(currentElement, namespace, currentEventName, realSelector);
+                if (currentEventName) {
+
+                    if (realHandler){
+                        removeListener(currentElement, namespace, currentEventName, realHandler, realSelector);
+                    }
+                    else {
+                        removeAllListeners(currentElement, namespace, currentEventName, realSelector);
+                    }
+                } else if (namespace) { // in this case we don't have eventName but we have namespace
+                
+                    for (const currentEvent in currentElement.ev) {
+                        removeAllListeners(currentElement, namespace, currentEvent, realSelector);
+                    }
                 }
             }
         } 
