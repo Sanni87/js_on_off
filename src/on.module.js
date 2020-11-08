@@ -1,6 +1,6 @@
 import { getRealEventList, getNameAndNamespace } from './common.module';
 
-const on = function (events, selector, data, handler) {
+const on = (caller, events, selector, data, handler) => {
 
     //if event is null or empty, don't run anything
     if (events) {
@@ -25,7 +25,7 @@ const on = function (events, selector, data, handler) {
 
         eventsSplitted = events.split(' ');
 
-        elementList = getRealEventList(this);
+        elementList = getRealEventList(caller);
 
         for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
             const currentElement = elementList[elementIndex];
@@ -52,7 +52,7 @@ const on = function (events, selector, data, handler) {
     }
 };
 
-const addListener = function (element, namespace, currentEvent, handler, delegateSelector) {
+const addListener = (element, namespace, currentEvent, handler, delegateSelector) => {
     if (element && currentEvent && handler) {
 
         let realEventStructure;
@@ -69,7 +69,7 @@ const addListener = function (element, namespace, currentEvent, handler, delegat
             realEventStructure.el.push(handler);
             element.addEventListener(currentEvent, handler);
         } else {
-            const delegateHandler = createDelegateHandler(handler, delegateSelector);
+            const delegateHandler = createDelegateHandler(element, handler, delegateSelector);
             if (!realEventStructure.del[delegateSelector]){
                 realEventStructure.del[delegateSelector] = [];
             }
@@ -79,13 +79,13 @@ const addListener = function (element, namespace, currentEvent, handler, delegat
     }
 };
 
-const createDelegateHandler = function (handler, delegateSelector) {
+const createDelegateHandler = (element, handler, delegateSelector) => {
     let outcome = null;
 
     if (handler && delegateSelector){
         outcome = function(e) {
             // loop parent nodes from the target to the delegation node
-            for (let target = e.target; target && target != this; target = target.parentNode) {
+            for (let target = e.target; target && target != element; target = target.parentNode) {
                 if (target.matches(delegateSelector)) {
                     handler.call(target, e);
                     break;
@@ -99,7 +99,7 @@ const createDelegateHandler = function (handler, delegateSelector) {
     return outcome;
 };
 
-const createEmptyEventStructure = function (withNamespacedEvents) {
+const createEmptyEventStructure = (withNamespacedEvents) => {
     let outcome = {
         el: [], //no-namespaced eventListeners
         del: {} //delegate eventListeners

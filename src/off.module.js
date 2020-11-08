@@ -1,6 +1,6 @@
 import { getRealEventList, getNameAndNamespace } from './common.module';
 
-const off = function (events, selector, handler) {
+const off = (caller, events, selector, handler) => {
 
     let elementList,
     realSelector,
@@ -22,7 +22,7 @@ const off = function (events, selector, handler) {
         eventsSplitted = events.split(' ');
     }
 
-    elementList = getRealEventList(this);
+    elementList = getRealEventList(caller);
 
     for (let elementIndex = 0; elementIndex < elementList.length; elementIndex++) {
         const currentElement = elementList[elementIndex];
@@ -59,7 +59,7 @@ const off = function (events, selector, handler) {
     }
 };
 
-const removeAllListeners = function (currentElement, namespace, currentEvent, realSelector) {
+const removeAllListeners = (currentElement, namespace, currentEvent, realSelector) => {
     let handlerList = getHandlerList(currentElement, namespace, currentEvent, realSelector);
     if (handlerList) {
         for (let handlerIndex = 0; handlerIndex < handlerList.length; handlerIndex++) {
@@ -83,7 +83,7 @@ const removeAllListeners = function (currentElement, namespace, currentEvent, re
     }
 }
 
-const removeListener = function (element, namespace, currentEvent, handler, delegateSelector) {
+const removeListener = (element, namespace, currentEvent, handler, delegateSelector) => {
     let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
 
     if (realEventStructure && handler) {
@@ -101,7 +101,7 @@ const removeListener = function (element, namespace, currentEvent, handler, dele
     }
 }
 
-const getDelegateHandler = function (realEventStructure, handler, delegateSelector) {
+const getDelegateHandler = (realEventStructure, handler, delegateSelector) => {
     let outcome = null;
 
     if (realEventStructure && delegateSelector) {
@@ -113,7 +113,7 @@ const getDelegateHandler = function (realEventStructure, handler, delegateSelect
     return outcome;
 };
 
-const getHandlerList = function (element, namespace, currentEvent, delegateSelector) {
+const getHandlerList = (element, namespace, currentEvent, delegateSelector) => {
     let outcome = null;
 
     let realEventStructure = getRealEventStructure(element, namespace, currentEvent);
@@ -130,7 +130,7 @@ const getHandlerList = function (element, namespace, currentEvent, delegateSelec
     return outcome;
 };
 
-const getRealEventStructure = function (element, namespace, currentEvent) {
+const getRealEventStructure = (element, namespace, currentEvent) => {
     let outcome;
     if (element && element.ev && currentEvent && element.ev[currentEvent]) {
 
