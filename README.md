@@ -6,4 +6,4 @@ Main features of Jquery on and Jquery off included with this tiny js (< 3Kb mini
 - event delegation
 - remove all event listeners with off
 - Works with document, Element, HtmlElement, NodeList and HTMLCollection
-- event namespacing (to do)
+- event namespacing
