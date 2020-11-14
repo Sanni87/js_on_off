@@ -15,7 +15,7 @@ const resetElement = (document, elementId) => {
     el.parentNode.replaceChild(cloned, el);
 };
 const triggerMouseEvent = (document, node, eventType) => {
-    var clickEvent = document.createEvent ('MouseEvents');
+    var clickEvent = document.createEvent('MouseEvents');
     clickEvent.initEvent (eventType, true, true);
     node.dispatchEvent (clickEvent);
 }
