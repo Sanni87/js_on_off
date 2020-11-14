@@ -1,11 +1,12 @@
 {
   "name": "js_on_off",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight alternative to jquery on and jquery off",
-  "main": "dist/on_off.min.js",
+  "main": "dist/on_off.module.js",
   "directories": {
     "test": "test"
   },
+  "files": ["dist/*"],
   "scripts": {
     "test": "qunit --require esm",
     "build-prod": "webpack --config ./webpack.config.prod.js",
