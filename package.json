@@ -1,8 +1,16 @@
 {
   "name": "js_on_off",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A lightweight alternative to jquery on and jquery off",
   "main": "dist/on_off.module.js",
+  "keywords": [
+    "on",
+    "off",
+    "removeAllEventListener",
+    "delegate",
+    "namespace",
+    "handler"
+  ],
   "directories": {
     "test": "test"
   },
