@@ -1,6 +1,6 @@
 {
   "name": "js_on_off",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A lightweight alternative to jquery on and jquery off",
   "main": "dist/on_off.module.js",
   "directories": {
