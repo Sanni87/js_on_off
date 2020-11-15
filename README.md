@@ -120,6 +120,36 @@ button.on('mouseup.removeThis', handler3)
 button.off('click.removeThis'); //unbind handler2
 button.off('.removeThis'); //unbind handler2 and handler3
 ```
+### Examples importing module
+If we import the module in a js file, on and off functions will not be attached to NodeList, HtmlElement and so on, so the syntax is a bit different. Here are the same samples using import:
+```javascript
+import { on, off } from  'js_on_off';
+
+var parent = document.querySelector("#buttonParent");
+var button = document.querySelector("#btn");
+var handler = function (event) {
+    //do stuff
+};
+
+//binding
+on(button, 'click', function (event) {
+    //'event' is the same than .addEventListener() handler param
+});
+on(button, 'click', handler); 
+on(button, 'click', '#button', handler);
+on(button, 'click.removeThis', handler); 
+
+//unbinding
+off(parent, 'click', '#button', handler); //unbind just "handler" for click event on button
+off(parent, 'click', '#button'); //unbind all click events on button
+off(button, 'click', handler); //unbind just "handler" for click event on button
+off(button, 'click'); //unbind all click events on button
+off(button, 'click.removeThis'); //unbind attached 'click' events with 'removeThis' namespace on button
+off(button, '.removeThis'); //unbind all events with removeThis namespace on button
+off(button); //unbind everything on button
+
+```
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
