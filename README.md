@@ -13,7 +13,7 @@ js_on_off is a tiny js library (< 3kb) created to have jQuery on() and off() fun
 Use the package manager [npm](https://pip.pypa.io/en/stable/) to install js_on_off.
 
 ```bash
-npm install js_on_off --saveDev
+npm install js_on_off --save
 ```
 Alternatively, you can just download this project from git.
 Https:
@@ -36,7 +36,7 @@ Once downloaded, there are 2 ways to include this library in your project.
 You can do it from an html or of course you can reference the script to include on a custom bundle if you want it.
 
 ### Import module
-If you are using tools like webpack, gulp and so on, you can also import the library as follows:
+If you are using tools like webpack, babel, gulp or similars, you can also import the library as follows:
 ```javascript
 import { on, off } from  'js_on_off';
 ```
@@ -81,7 +81,7 @@ var handler = function (event) {
 };
 
 //delegate binding with anonymous function
-//In this case click event is to parent, but handler will be executed when button is clicked
+//In this case click event is attached to parent, but handler will be executed when button is clicked
 parent.on('click', '#button', function (event) {
     //'event' is the same than .addEventListener() handler param
 });
